@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title></title>
+  <link rel="stylesheet"  />
+</head>
+<body>
+  
+  <div class="viewport"></div>
+
+  <script src="three.min.js"></script>
+  <script src="physi.js"></script>
+  //<script src="OrbitControls.js"></script>
+  <script>
+    let container, scene, renderer, camera, light, ball, plane;
+    let WIDTH, HEIGHT, VIEW_ANGLE, ASPECT, NEAR, FAR;
+
+    let clock = new THREE.Clock();
+
+    Physijs.scripts.worker = 'physijs_worker.js';
+    Physijs.scripts.ammo = 'ammo.js';
+
+    container = document.querySelector('.viewport');
+
+    WIDTH = window.innerWidth,
+    HEIGHT = window.innerHeight;
+
+    VIEW_ANGLE = 45,
+    ASPECT = WIDTH / HEIGHT,
+    NEAR = 1,
+    FAR = 10000;
+
+    scene = new Physijs.Scene();
+    scene.setGravity(new THREE.Vector3( 0, -50., 0 ));
+    scene.addEventListener('update', function() {
+        scene.simulate(undefined, 2);
+    });
+
+    renderer = new THREE.WebGLRenderer({
+      antialias: true
+    });
+
+    renderer.setSize(WIDTH, HEIGHT);
+    renderer.shadowMapEnabled = true;
+    renderer.shadowMapSoft = true;
+    renderer.shadowMapType = THREE.PCFShadowMap;
+    renderer.shadowMapAutoUpdate = true;
+
+    container.appendChild(renderer.domElement);
+
+    camera = new THREE.PerspectiveCamera(VIEW_ANGLE, ASPECT, NEAR, FAR);
+
+    camera.position.set(420, 160, 360);
+    camera.lookAt(scene.position);
+    scene.add(camera);
+    //const controls = new OrbitControls( camera, renderer.domElement );
+
+    light = new THREE.DirectionalLight(0xff00ff);
+
+    light.position.set(0, 200, 0);
+    light.castShadow = true;
+    light.shadowCameraLeft = -600;
+    light.shadowCameraTop = -600;
+    light.shadowCameraRight = 600;
+    light.shadowCameraBottom = 600;
+    light.shadowCameraNear = 1;
+    light.shadowCameraFar = 1000;
+    light.shadowBias = -.0001
+    // light.angle = Math.PI;
+    light.shadowMapWidth = light.shadowMapHeight = 4000;
+    light.shadowDarkness = .7;
+
+    scene.add(light);
+    const spothelp = new THREE.SpotLightHelper(light, 0x0F0F0F);
+    scene.add(spothelp);
+    //controls.update();
+
+    plane = new Physijs.BoxMesh(
+      new THREE.CubeGeometry(500, 200, 2, 100, 100),
+      Physijs.createMaterial(
+        new THREE.MeshLambertMaterial({
+          color: 0xeeeeee
+        }),
+        .4,
+        .99
+      ),
+      0
+    );
+
+    plane.rotation.x = -Math.PI / 2;
+    plane.rotation.y = Math.PI / 12;
+    plane.receiveShadow = true;
+
+    scene.add(plane);
+
+    create_wall(0, 0, 0, -Math.PI/2, 0, 50, 100);
+    create_wall(-50, 10, -50, -Math.PI/2, -Math.PI/6, 50, 50);
+    create_wall(-50, 10, 50, -Math.PI/2, -Math.PI/6, 50, 50);
+
+    create_wall(100, -10, -100, -Math.PI*2/6, -Math.PI/6, 50, 100);
+    create_wall(100, -10, 100, -Math.PI*4/6, -Math.PI/6, 50, 100);
+
+    function create_wall(x, y, z, angle_x, angle_y, size_x, size_z){
+      let wall = new Physijs.BoxMesh(
+              new THREE.CubeGeometry(size_x, size_z, 2, 100, 100),
+              Physijs.createMaterial(
+                      new THREE.MeshLambertMaterial({
+                        color: 0xFF0000
+                      }),
+                      .4,
+                      .99
+              ),
+              0
+      );
+      wall.position.x = x;
+      wall.position.y = y;
+      wall.position.z = z;
+      wall.rotation.x = angle_x;
+      wall.rotation.y = angle_y;
+      wall.receiveShadow = true;
+
+      scene.add(wall);
+    }
+
+    setInterval(function() {
+      ball = new Physijs.SphereMesh(
+        new THREE.SphereGeometry(
+          Math.random() * (6 - 3) + 3,
+          16,
+          16
+        ),
+        Physijs.createMaterial(
+          new THREE.MeshLambertMaterial({
+            color: 0x0000FF,
+            reflectivity: .8
+          }),
+          .4,
+          .99
+        ),
+        1
+      );
+
+      let r = {
+        x: Math.random() * (Math.PI - Math.PI / 12) + Math.PI / 12,
+        y: Math.random() * (Math.PI - Math.PI / 12) + Math.PI / 12,
+        z: Math.random() * (Math.PI - Math.PI / 12) + Math.PI / 12
+      };
+
+      // ball.rotation.set(r.x, r.y, r.z);
+      ball.position.y = 100;
+      ball.position.x = -240;
+      ball.position.z = Math.random() * 150 - 75;
+      ball.castShadow = true;
+      ball.receiveShadow = true;
+
+      scene.add(ball);
+    }, 400);
+
+    render();
+    scene.simulate()
+
+
+    function render() {
+      for (let i = 5; i < scene.children.length - 5; i++) {
+        let obj = scene.children[i];
+
+        if (obj.position.y <= -100) {
+          scene.remove(obj);
+        }
+      }
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(render);
+    }
+  </script>
+</body>
+</html>
