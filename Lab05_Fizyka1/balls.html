@@ -11,7 +11,7 @@
 
   <script src="three.min.js"></script>
   <script src="physi.js"></script>
-  //<script src="OrbitControls.js"></script>
+  <script src="OrbitControls.js"></script>
   <script>
     let container, scene, renderer, camera, light, ball, plane;
     let WIDTH, HEIGHT, VIEW_ANGLE, ASPECT, NEAR, FAR;
@@ -54,7 +54,7 @@
     camera.position.set(520, 160, 460);
     camera.lookAt(scene.position);
     scene.add(camera);
-    //const controls = new OrbitControls( camera, renderer.domElement );
+    let controls = new THREE.OrbitControls( camera, renderer.domElement );
 
     light = new THREE.DirectionalLight(0xffffff);
 
@@ -74,36 +74,20 @@
     scene.add(light);
     const spothelp = new THREE.SpotLightHelper(light, 0x0F0F0F);
     scene.add(spothelp);
-    //controls.update();
 
-    plane = new Physijs.BoxMesh(
-      new THREE.CubeGeometry(500, 200, 2, 100, 100),
-      Physijs.createMaterial(
-        new THREE.MeshLambertMaterial({
-          color: 0x00C000
-        }),
-        .4,
-        .99
-      ),
-      0
-    );
+    create_wall(-250, 85, 0, -Math.PI/2, Math.PI / 3, 0, 50, 2, 200, 0x00C000);
+    create_wall(0, 0, 0, -Math.PI/2, Math.PI / 12, 0, 500, 10, 200, 0x00C000);
 
-    plane.rotation.x = -Math.PI / 2;
-    plane.rotation.y = Math.PI / 12;
-    plane.receiveShadow = true;
+    create_wall(0, 5, 0, -Math.PI/2, 0, 0, 50, 2, 100, 0xFF0000);
+    create_wall(-50, 25, -50, -Math.PI/2, -Math.PI/6, 0, 20, 2, 50, 0xFF0000);
+    create_wall(-50, 25, 50, -Math.PI/2, -Math.PI/6, 0, 20, 2, 50, 0xFF0000);
 
-    scene.add(plane);
+    create_wall(100, -10, -75, -Math.PI*2/6, -Math.PI/6, Math.PI/6, 50, 2, 76, 0xFF0000);
+    create_wall(100, -10, 75, -Math.PI*4/6, -Math.PI/6, -Math.PI/6, 50, 2, 76, 0xFF0000);
 
-    create_wall(0, 0, 0, -Math.PI/2, 0, 0, 50, 100);
-    create_wall(-50, 10, -50, -Math.PI/2, -Math.PI/6, 0, 50, 50);
-    create_wall(-50, 10, 50, -Math.PI/2, -Math.PI/6, 0, 50, 50);
-
-    create_wall(100, -15, -75, -Math.PI*2/6, -Math.PI/6, Math.PI/6, 50, 76);
-    create_wall(100, -15, 75, -Math.PI*4/6, -Math.PI/6, -Math.PI/6, 50, 76);
-
-    create_pole(200, -35, 0, 5, 10, 75);
-    create_pole(150, -25, -75, 15, 5, 50);
-    create_pole(150, -25, 75, 15, 5, 50);
+    create_pole(200, -30, 0, 5, 10, 50);
+    create_pole(175, -20, -75, 10, 5, 50);
+    create_pole(175, -20, 75, 10, 5, 50);
 
     function create_pole(x, y, z, radius_top, radius_bottom, height){
       let cylinder = new Physijs.BoxMesh(
@@ -124,12 +108,12 @@
 
       scene.add( cylinder );
     }
-    function create_wall(x, y, z, angle_x, angle_y, angle_z, size_x, size_z){
+    function create_wall(x, y, z, angle_x, angle_y, angle_z, size_x, size_y, size_z, color){
       let wall = new Physijs.BoxMesh(
-              new THREE.CubeGeometry(size_x, size_z, 2, 100, 100),
+              new THREE.CubeGeometry(size_x, size_z, size_y, 100, 100),
               Physijs.createMaterial(
                       new THREE.MeshLambertMaterial({
-                        color: 0xFF0000
+                        color: color
                       }),
                       .4,
                       .99
@@ -189,10 +173,11 @@
       for (let i = 5; i < scene.children.length - 5; i++) {
         let obj = scene.children[i];
 
-        if (obj.position.y <= -100) {
+        if (obj.position.y <= -150) {
           scene.remove(obj);
         }
       }
+      controls.update();
 
       renderer.render(scene, camera);
       requestAnimationFrame(render);
